@@ -1,0 +1,11 @@
+name = "ai-chat"
+main = "worker.js"
+compatibility_date = "2025-08-27"
+keep_vars = true
+
+[secrets]
+required = [ "API_TOKEN" ]
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
