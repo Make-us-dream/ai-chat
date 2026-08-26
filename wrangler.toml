@@ -1,0 +1,7 @@
+name = "ai-chat"
+main = "worker.js"
+compatibility_date = "2025-08-27"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
