@@ -2,8 +2,11 @@ const form = document.getElementById("chat-form");
 const modelSelect = document.getElementById("model");
 const contentInput = document.getElementById("content");
 const submitBtn = document.getElementById("submit-btn");
+const downloadBtn = document.getElementById("download-btn");
 const statusEl = document.getElementById("status");
 const responseEl = document.getElementById("response");
+
+let lastExchange = null;
 
 function setStatus(message, isError = false) {
   if (!message) {
@@ -22,6 +25,28 @@ function setResponse(text, empty = false) {
   responseEl.classList.toggle("empty", empty);
 }
 
+function setDownloadEnabled(enabled) {
+  downloadBtn.hidden = !enabled;
+}
+
+function downloadExchange() {
+  if (!lastExchange) {
+    return;
+  }
+
+  const body = `Prompt:\n${lastExchange.prompt}\n\nResponse:\n${lastExchange.response}\n`;
+  const blob = new Blob([body], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  link.href = url;
+  link.download = `ai-chat-${stamp}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
@@ -34,6 +59,8 @@ form.addEventListener("submit", async (event) => {
   }
 
   submitBtn.disabled = true;
+  lastExchange = null;
+  setDownloadEnabled(false);
   setStatus("Sending request…");
   setResponse("Waiting for a response.", true);
 
@@ -63,12 +90,18 @@ form.addEventListener("submit", async (event) => {
       throw new Error("The API response did not include message content.");
     }
 
+    lastExchange = { prompt: content, response: text };
     setStatus("");
     setResponse(text, false);
+    setDownloadEnabled(true);
   } catch (error) {
+    lastExchange = null;
+    setDownloadEnabled(false);
     setStatus(error.message || "Request failed.", true);
     setResponse("Waiting for a response.", true);
   } finally {
     submitBtn.disabled = false;
   }
 });
+
+downloadBtn.addEventListener("click", downloadExchange);
