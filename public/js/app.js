@@ -132,11 +132,14 @@ form.addEventListener("submit", async (event) => {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const message =
+      let message =
         (typeof data.error === "string" && data.error) ||
         data.error?.message ||
         data.message ||
         `Request failed (${res.status})`;
+      if (typeof data.preview === "string" && data.preview) {
+        message += ` Preview: ${data.preview}`;
+      }
       throw new Error(message);
     }
 
