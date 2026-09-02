@@ -29,6 +29,61 @@ function setDownloadEnabled(enabled) {
   downloadBtn.hidden = !enabled;
 }
 
+function extractTextFromParts(parts) {
+  if (!Array.isArray(parts)) {
+    return "";
+  }
+
+  return parts
+    .map((part) => {
+      if (typeof part === "string") {
+        return part;
+      }
+      if (!part || typeof part !== "object") {
+        return "";
+      }
+      if (typeof part.text === "string") {
+        return part.text;
+      }
+      if (typeof part.content === "string") {
+        return part.content;
+      }
+      if (typeof part.output_text === "string") {
+        return part.output_text;
+      }
+      return "";
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function extractAssistantContent(data) {
+  if (typeof data?.content === "string" && data.content.trim()) {
+    return data.content.trim();
+  }
+
+  const message = data?.choices?.[0]?.message;
+  const content = message?.content ?? data?.choices?.[0]?.text ?? data?.content;
+
+  if (typeof content === "string" && content.trim()) {
+    return content.trim();
+  }
+
+  if (Array.isArray(content)) {
+    const fromParts = extractTextFromParts(content);
+    if (fromParts) {
+      return fromParts;
+    }
+  }
+
+  if (typeof message?.reasoning_content === "string" && message.reasoning_content.trim()) {
+    return message.reasoning_content.trim();
+  }
+
+  return "";
+}
+
 function downloadExchange() {
   if (!lastExchange) {
     return;
@@ -85,8 +140,8 @@ form.addEventListener("submit", async (event) => {
       throw new Error(message);
     }
 
-    const text = data?.choices?.[0]?.message?.content;
-    if (typeof text !== "string" || !text) {
+    const text = extractAssistantContent(data);
+    if (!text) {
       throw new Error("The API response did not include message content.");
     }
 
